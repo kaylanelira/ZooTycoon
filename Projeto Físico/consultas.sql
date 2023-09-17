@@ -108,3 +108,8 @@ END;
 //
 DELIMITER ;
 
+/* Anti Junção: Quais são os zeladores que não 
+    trabalharam depois de DD/MM/YY */
+SELECT NOME FROM ZELADOR
+WHERE ID NOT IN (SELECT ID_ZELADOR FROM JAULA
+                 WHERE DATA_MANUTENCAO > TO_DATE('14/03/21'));
