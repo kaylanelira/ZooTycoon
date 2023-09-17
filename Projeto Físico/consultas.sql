@@ -64,6 +64,12 @@ SELECT A.NOME FROM ANIMAL A
 WHERE EXISTS (SELECT * FROM EXPOE E
               WHERE A.ID = E.ID_ANIMAL);
 
+/* Anti Junção: Quais são os zeladores que não 
+    trabalharam depois de DD/MM/YY */
+SELECT NOME FROM ZELADOR
+WHERE ID NOT IN (SELECT ID_ZELADOR FROM JAULA
+                 WHERE DATA_MANUTENCAO > TO_DATE('14/03/21'));
+
 -- Function: Para quantas consultas um animal de nome tal já foi?
 CREATE OR REPLACE FUNCTION qtd_consultas_animal (NOME_ANIMAL VARCHAR2) RETURN NUMBER IS
     qtdC NUMBER;
@@ -87,6 +93,7 @@ BEGIN
     DBMS_OUTPUT.PUT_LINE('Quantidade de consultas: '||qtd_consultas_animal('LOLA'));
 END;
 
+
 -- Tabela e Gatilho: Registro de todas as visitas a exposição
 CREATE TABLE HISTORICO_VISITAS_EXPOSICAO (
     ID INT AUTO_INCREMENT PRIMARY KEY,
@@ -108,8 +115,26 @@ END;
 //
 DELIMITER ;
 
-/* Anti Junção: Quais são os zeladores que não 
-    trabalharam depois de DD/MM/YY */
-SELECT NOME FROM ZELADOR
-WHERE ID NOT IN (SELECT ID_ZELADOR FROM JAULA
-                 WHERE DATA_MANUTENCAO > TO_DATE('14/03/21'));
+-- Quantidade de visitantes por exposicao
+CREATE OR REPLACE PROCEDURE vis_exp(NOME_EXP VARCHAR)IS 
+    QTD_VIS NUMBER;
+
+BEGIN
+     SELECT COUNT(*) INTO QTD_VIS
+     FROM VISITA
+     WHERE ID_EXPO = (SELECT ID FROM EXPOSICAO 
+                WHERE NOME = NOME_EXP);
+                
+     DBMS_OUTPUT.PUT_LINE('Quantidade de visitantes no '||NOME_EXP|| ' foi de: '|| QTD_VIS);
+END;
+/
+
+EXEC vis_exp('seaborn');
+
+-- Lista nome de animais e id de todos excetos aquaticos.
+SELECT NOME AS ANIMAL, ID ID_ANIMAL FROM ANIMAL 
+WHERE ID IN (
+    (SELECT ID FROM ANIMAL)
+    EXCEPT
+    (SELECT ID FROM AQUATICO)
+);
