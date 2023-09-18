@@ -12,11 +12,11 @@ Seu projeto deve ter todos os tipos de consultas abaixo
 Atenção: Cada aluno deve fazer ao menos 01 dessas consultas mais 01 procedimento com SQL embutida e parâmetro, função com SQL embutida e parâmetro ou gatilho. 
 
 /* Junção interna: Qual o nome do animal e o nome do 
-    veterinário envolvidos na consulta de ID 5555? */
+    veterinário envolvidos na consulta na data 15/09? */
 SELECT A.NOME AS NOME_ANIMAL, V.NOME AS NOME_VETERINARIO
 FROM ANIMAL A INNER JOIN ANIMAL_CONSULTA AC ON A.ID = AC.ID_ANIMAL 
               INNER JOIN VETERINARIO V ON AC.ID_VET = V.ID
-WHERE AC.ID_CONSULTA = '5555'
+WHERE AC.DATA = TO_DATE('15/09/2023')
 
 -- Junção interna: Quais animais estarão de exposição no dia X
 SELECT A.NOME 
@@ -25,12 +25,12 @@ FROM ANIMAL A INNER JOIN EXPOE E ON A.ID = E.ID_ANIMAL
 WHERE TO_CHAR(W.DATA_INICIO, 'DD') = 11;
 
 /* Junção Externa: quais são os nomes dos visitantes 
-    que visitaram a exposição com ID 5555? */
+    que visitaram a exposição com ID 5678? */
 SELECT VISITANTE.NOME
 FROM VISITANTE
 LEFT JOIN VISITA ON VISITANTE.CPF = VISITA.CPF_VISITANTE
 LEFT JOIN EXPOSICAO ON VISITA.ID_EXPO = EXPOSICAO.ID
-WHERE EXPOSICAO.ID = '0505';
+WHERE EXPOSICAO.ID = '5678';
 
 /* Group By/Having: Agrupar por nome de exposição, 
     os que terão mais de 5 visitantes */
@@ -48,15 +48,15 @@ WHERE ALTURA_VOO > (SELECT AVG(ALTURA_VOO) FROM AEREO);
     realizam consulta no dia X */
 SELECT V.NOME FROM VETERINARIO V
 WHERE V.ID IN (SELECT ID_VET FROM CONSULTA 
-                WHERE TO_CHAR(DATA,'DD') = 18);
+                WHERE TO_CHAR(DATA,'DD') = 16);
 
 /* Subconsulta linha: Saber nome das exposiões que vão se 
-    acontecem entre os mesmos dias da exposição com o id 0404 */
+    acontecem entre os mesmos dias da exposição com o id 3456 */
 SELECT NOME FROM EXPOSICAO
 WHERE (DATA_INICIO, DATA_FIM) = 
                             (SELECT DATA_INICIO, DATA_FIM 
                              FROM EXPOSICAO 
-                             WHERE ID = 0404);
+                             WHERE ID = 3456);
 
 /* Semi junção: Listar todos os animais 
     que participaram de exposições */
