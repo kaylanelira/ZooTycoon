@@ -12,13 +12,10 @@ FROM ANIMAL A INNER JOIN EXPOE E ON A.ID = E.ID_ANIMAL
               INNER JOIN EXPOSICAO EXPO ON E.ID_EXPO = EXPO.ID
 WHERE EXPO.NOME = 'SEABORN';
 
-/* Junção Externa: quais são os nomes dos visitantes 
-    que visitaram a exposição com ID 5678? */
-SELECT VISITANTE.NOME
-FROM VISITANTE
-LEFT JOIN VISITA ON VISITANTE.CPF = VISITA.CPF_VISITANTE
-LEFT JOIN EXPOSICAO ON VISITA.ID_EXPO = EXPOSICAO.ID
-WHERE EXPOSICAO.ID = '5678';
+/* Junção Externa: Todos os zeladores que não tem jaula atribuida */
+SELECT *
+FROM ZELADOR Z LEFT OUTER JOIN JAULA J ON (Z.ID = J.ID_ZELADOR)
+WHERE J.ID_ZELADOR IS NULL;
 
 /* Group By/Having: Agrupar por nome de exposição, 
     os que terão mais de 6 visitantes */
