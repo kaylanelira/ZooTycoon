@@ -1,28 +1,16 @@
-Seu projeto deve ter todos os tipos de consultas abaixo
--Group by/Having
--Junção interna
--Junção externa
--Semi junção
--Anti-junção
--Subconsulta do tipo escalar
--Subconsulta do tipo linha
--Subconsulta do tipo tabela
--Operação de conjunto
-
-Atenção: Cada aluno deve fazer ao menos 01 dessas consultas mais 01 procedimento com SQL embutida e parâmetro, função com SQL embutida e parâmetro ou gatilho. 
-
-/* Junção interna: Qual o nome do animal e o nome do 
-    veterinário envolvidos na consulta na data 15/09? */
-SELECT A.NOME AS NOME_ANIMAL, V.NOME AS NOME_VETERINARIO
+/* Junção interna: Quais as espécies dos animais e o nome dos 
+    veterinários envolvidos nas consultas na data 09/09/2023? */
+SELECT A.ESPECIE, V.NOME
 FROM ANIMAL A INNER JOIN ANIMAL_CONSULTA AC ON A.ID = AC.ID_ANIMAL 
               INNER JOIN VETERINARIO V ON AC.ID_VET = V.ID
-WHERE AC.DATA = TO_DATE('15/09/2023')
+WHERE AC.DATA_CONSULTA = TO_DATE('09/09/2023')
 
--- Junção interna: Quais animais estarão de exposição no dia X
-SELECT A.NOME 
+/* Junção interna: Quais as espécies de animais estarão 
+    na exposição de nome 'SEABORN' */
+SELECT A.ESPECIE 
 FROM ANIMAL A INNER JOIN EXPOE E ON A.ID = E.ID_ANIMAL
-              INNER JOIN EXPOSICAO W ON E.ID_EXPO = W.ID
-WHERE TO_CHAR(W.DATA_INICIO, 'DD') = 11;
+              INNER JOIN EXPOSICAO EXPO ON E.ID_EXPO = EXPO.ID
+WHERE EXPO.NOME = 'SEABORN';
 
 /* Junção Externa: quais são os nomes dos visitantes 
     que visitaram a exposição com ID 5678? */
@@ -33,22 +21,23 @@ LEFT JOIN EXPOSICAO ON VISITA.ID_EXPO = EXPOSICAO.ID
 WHERE EXPOSICAO.ID = '5678';
 
 /* Group By/Having: Agrupar por nome de exposição, 
-    os que terão mais de 5 visitantes */
+    os que terão mais de 6 visitantes */
 SELECT E.NOME 
 FROM EXPOSICAO E INNER JOIN VISITA A ON A.ID_EXPO = E.ID
 GROUP BY E.NOME
-HAVING COUNT(*) > 0;
+HAVING COUNT(*) > 6;
 
 /* Subconsulta Escalar: Quais animais aéreos tem altura 
     de voo maior que a média */
-SELECT ID FROM AEREO 
+SELECT ID, ALTURA_VOO 
+FROM AEREO 
 WHERE ALTURA_VOO > (SELECT AVG(ALTURA_VOO) FROM AEREO);
 
 /* Subconsulta Tabela: Quais os veterinarios que 
     realizam consulta no dia X */
 SELECT V.NOME FROM VETERINARIO V
 WHERE V.ID IN (SELECT ID_VET FROM CONSULTA 
-                WHERE TO_CHAR(DATA,'DD') = 16);
+                WHERE TO_CHAR(DATA_CONSULTA,'DD/MM/YYYY') = '16/09/2023');
 
 /* Subconsulta linha: Saber nome das exposiões que vão se 
     acontecem entre os mesmos dias da exposição com o id 3456 */
@@ -58,9 +47,9 @@ WHERE (DATA_INICIO, DATA_FIM) =
                              FROM EXPOSICAO 
                              WHERE ID = 3456);
 
-/* Semi junção: Listar todos os animais 
+/* Semi junção: Listar todos as espécies dos animais 
     que participaram de exposições */
-SELECT A.NOME FROM ANIMAL A
+SELECT DISTINCT A.ESPECIE FROM ANIMAL A
 WHERE EXISTS (SELECT * FROM EXPOE E
               WHERE A.ID = E.ID_ANIMAL);
 
@@ -70,16 +59,14 @@ SELECT NOME FROM ZELADOR
 WHERE ID NOT IN (SELECT ID_ZELADOR FROM JAULA
                  WHERE DATA_MANUTENCAO > TO_DATE('14/03/21'));
 
--- Function: Para quantas consultas um animal de nome tal já foi?
-CREATE OR REPLACE FUNCTION qtd_consultas_animal (NOME_ANIMAL VARCHAR2) RETURN NUMBER IS
+-- Function: Para quantas consultas um animal de ID tal já foi?
+CREATE OR REPLACE FUNCTION qtd_consultas_animal (ID VARCHAR2) RETURN NUMBER IS
     qtdC NUMBER;
 BEGIN
     SELECT COUNT(*) INTO qtdC
     FROM ANIMAL_CONSULTA AC
-    WHERE AC.ID_ANIMAL =
-        (SELECT ID
-         FROM ANIMAL
-         WHERE NOME = NOME_ANIMAL);
+    WHERE AC.ID_ANIMAL = ID
+    GROUP BY AC.ID_ANIMAL;
          
     RETURN qtdC;
     
@@ -90,14 +77,13 @@ END;
 /
 
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('Quantidade de consultas: '||qtd_consultas_animal('LOLA'));
+    DBMS_OUTPUT.PUT_LINE('Quantidade de consultas do animal de ID 0011: '||qtd_consultas_animal('0011'));
 END;
 
 -- Tabela e Gatilho: Registro de todas as visitas a exposição
-
 CREATE TABLE HISTORICO_VISITAS_EXPOSICAO (
-    CPF_VISITANTE VARCHAR(4), 
-    ID_EXPOSICAO NUMBER,
+    CPF_VISITANTE VARCHAR2(11), 
+    ID_EXPOSICAO VARCHAR2(4),
     TEMPO_SISTEMA TIMESTAMP,
 
     CONSTRAINT FK_HISTORICO_VISITANTE FOREIGN KEY (CPF_VISITANTE) REFERENCES VISITANTE (CPF),
@@ -110,7 +96,7 @@ AFTER INSERT ON VISITA
 FOR EACH ROW
 BEGIN
     INSERT INTO HISTORICO_VISITAS_EXPOSICAO (CPF_VISITANTE, ID_EXPOSICAO, TEMPO_SISTEMA)
-    VALUES (:NEW.CPF, :NEW.ID_EXPOSICAO, SYSTIMESTAMP);
+    VALUES (:NEW.CPF_VISITANTE, :NEW.ID_EXPO, SYSTIMESTAMP AT TIME ZONE 'UTC');
 END;
 /
 
@@ -128,12 +114,14 @@ BEGIN
 END;
 /
 
-EXEC vis_exp('seaborn');
+EXEC vis_exp('SEABORN');
 
--- Lista nome de animais e id de todos excetos aquaticos.
-SELECT NOME AS ANIMAL, ID ID_ANIMAL FROM ANIMAL 
+-- Lista espécie e id de todos os animais excetos aquaticos.
+SELECT ESPECIE AS ANIMAL, ID ID_ANIMAL 
+FROM ANIMAL 
 WHERE ID IN (
     (SELECT ID FROM ANIMAL)
     EXCEPT
     (SELECT ID FROM AQUATICO)
-);
+)
+ORDER BY ESPECIE, ID;
